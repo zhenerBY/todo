@@ -4,31 +4,68 @@ import os
 import csv
 from abc import ABC, abstractmethod
 
+
 class Files(ABC):
-    """Междумордие стратегии"""
+    """Междумордие(почти) стратегии"""
 
-    @abstractmethod
+    @staticmethod
     def userslist() -> list:
-        ...
-        # files = os.listdir('./users/')
-        # return [x[:-5] for x in files if x[-5:] == '.json'] #подумать вывод по типу
+        filelist = []
+        extensions = ['.json', '.csv']
+        for file in os.listdir('./users/'):
+            for extension in extensions:
+                if file[-len(extension):] == extension:
+                    filelist.append(file.rstrip(extension))
+        return filelist
 
+    @staticmethod
     @abstractmethod
     def adduser(name: str):
         ...
 
+    @staticmethod
     @abstractmethod
     def deluser(name: str):
         ...
 
+    @staticmethod
     @abstractmethod
-    def opentasks(self) -> None:
+    def opentasks(name:str) -> list:
         ...
 
+    @staticmethod
     @abstractmethod
-    def safetasks(self) -> None:
+    def safetasks(name:str, data:list) -> None:
         ...
 
+class JsonFile(Files):
+
+    @staticmethod
+    def adduser(name: str):
+        newuser = Task().__dict__
+        newuser.pop('counter')
+        try:
+            with open('./users/' + name + '.json', 'w') as f:
+                json.dump([newuser], f)
+        except FileNotFoundError:
+            os.mkdir('users')
+            with open('./users/' + name + '.json', 'w') as f:
+                json.dump([newuser], f)
+
+    @staticmethod
+    def deluser(name: str):
+        os.remove('./users/' + name + '.json')
+
+    @staticmethod
+    def opentasks(name:str) -> list:
+        with open('./users/' + name + '.json', 'r') as file_json:
+            data = json.load(file_json)
+        return data
+
+    @staticmethod
+    def safetasks(name:str,  data:list) -> None:
+        with open('./users/' + self.__user + '.json', 'w') as file_json:
+            json.dump(self.tasks2save(), file_json)
 
 class Task:
     counter = 0
@@ -106,7 +143,8 @@ class Tasks:
     @staticmethod
     def deluser(name: str):
         os.remove('./users/' + name + '.json')
-# вроде не используется
+
+    # вроде не используется
     # @property
     # def user(self):
     #     return self.__user
