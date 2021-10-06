@@ -1,6 +1,33 @@
 from datetime import datetime, date, timedelta
 import json
 import os
+import csv
+from abc import ABC, abstractmethod
+
+class Files(ABC):
+    """Междумордие стратегии"""
+
+    @abstractmethod
+    def userslist() -> list:
+        ...
+        # files = os.listdir('./users/')
+        # return [x[:-5] for x in files if x[-5:] == '.json'] #подумать вывод по типу
+
+    @abstractmethod
+    def adduser(name: str):
+        ...
+
+    @abstractmethod
+    def deluser(name: str):
+        ...
+
+    @abstractmethod
+    def opentasks(self) -> None:
+        ...
+
+    @abstractmethod
+    def safetasks(self) -> None:
+        ...
 
 
 class Task:
@@ -79,16 +106,16 @@ class Tasks:
     @staticmethod
     def deluser(name: str):
         os.remove('./users/' + name + '.json')
-
-    @property
-    def user(self):
-        return self.__user
-
-    @user.setter
-    def user(self, name):
-        os.remove('./users/' + self.__user + '.json')
-        self.__user = name
-        self.safetasks()
+# вроде не используется
+    # @property
+    # def user(self):
+    #     return self.__user
+    #
+    # @user.setter
+    # def user(self, name):
+    #     os.remove('./users/' + self.__user + '.json')
+    #     self.__user = name
+    #     self.safetasks()
 
     def changeuser(self, name):
         self.task_list = []
