@@ -1,4 +1,4 @@
-from Classes_for_dict import Task, Tasks
+from Classes_for_dict import Task, Tasks, JsonFile, CsvFile, Files
 import click
 
 
@@ -57,33 +57,43 @@ def show_dict(dct: dict):
 def user_select(name: str = None) -> str:
     if name == None:
         while True:
-            show_list('Users list', ' (a)dd User, (d)elete User     or     E(x)it ', Tasks.userslist())
+            show_list('Users list',
+                      f" (a)dd User, (d)elete User  or  E(x)it     File's format - '{user.strategy()}' - (C)hange",
+                      user.strategy.userslist())
             action = set_and_val(
                 'Enter user number, or command :',
-                [*list(map(str, range(1, len(Tasks.userslist()) + 1))), *'aAdDxX'],
+                [*list(map(str, range(1, len(user.strategy.userslist()) + 1))), *'aAdDxXCc'],
             )
+            if action in 'cC':
+                strategy = set_and_val(f'Enter files format {list(map(lambda x: x.removeprefix("."), Files.extensions))}',
+                list(map(lambda x: x.removeprefix('.'), Files.extensions)))
+# надо добавить возврат стратегии
+                if strategy == 'json':
+                    user.strategy = JsonFile
+                if strategy == 'csv':
+                    user.strategy = CsvFile
             if action in 'aA':
                 if r_o:
                     input('!!!Operation is prohibited!!! Press Enter')
                 else:
                     name = set_and_val("Enter the name of the new user :", check=True, checkconditions=False)
-                    Tasks.adduser(name)
+                    user.strategy.adduser(name)
             if action in 'dD':
                 if r_o:
                     input('!!!Operation is prohibited!!! Press Enter')
                 else:
                     name = set_and_val("Enter the name NUMBER to delete :",
-                                       [*list(map(str, range(1, len(Tasks.userslist()) + 1)))],
+                                       [*list(map(str, range(1, len(user.strategy.userslist()) + 1)))],
                                        check=True)
-                    Tasks.deluser(Tasks.userslist()[int(name) - 1])
+                    user.strategy.deluser(user.strategy.userslist()[int(name) - 1])
             if action in 'xX':
                 exit()
-            if action in [*list(map(str, range(1, len(Tasks.userslist()) + 1)))]:
-                return Tasks.userslist()[int(action) - 1]
-    elif name in Tasks.userslist():
+            if action in [*list(map(str, range(1, len(user.strategy.userslist()) + 1)))]:
+                return user.strategy.userslist()[int(action) - 1]
+    elif name in user.strategy.userslist():
         return name
     else:
-        Tasks.adduser(name)
+        user.strategy.adduser(name)
         return name
 
 
@@ -195,6 +205,9 @@ def done_task(lst: list) -> None:
     if action in 'yY' and action != '':
         user.taskdone(*counters)
 
+def change_strategy(lst: list) -> None:
+    pass
+
 
 @click.command()
 @click.option('-n', 'name', help="user's file name in ./users/ (without extension)")
@@ -203,6 +216,7 @@ def main(name: str = None, r__o: bool = False):
     global r_o
     r_o = r__o
     global user
+    user = Tasks() #костыль. Т.к. user_select обращается к экземпляру Tasks
     user = Tasks(user_select(name))
     while True:
         show_list('LIST OF TASKS' + chr(174),
@@ -210,14 +224,14 @@ def main(name: str = None, r__o: bool = False):
                   [func_list[x][1] for x in func_list.keys()])
         action = set_and_val('Enter num of operation :',
                              [*func_list.keys(), *'xXoO'])
-        print(action)
+        # print(action)
         if action in 'xX':
             if not r_o:
-                user.safetasks()
+                user.strategy.safetasks(user.user, user.tasks2save())
             exit()
         if action in 'oO':
             if not r_o:
-                user.safetasks()
+                user.strategy.safetasks(user.user, user.tasks2save())
             user = Tasks(user_select())
         if action in func_list.keys():
             func_list[action][0](user.showtasks(False))
@@ -232,6 +246,7 @@ func_list = {'1': (show_tasks, 'Show tasks list'),
              '6': (search_task, 'Search for a task'),
              '7': (sort_task, 'Display sorted list'),
              '8': (done_task, 'Mark task as completed'),
+             '9': (change_strategy, 'Change file format'),
              }
 
 main()

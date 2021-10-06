@@ -6,17 +6,29 @@ from abc import ABC, abstractmethod
 
 
 class Files(ABC):
-    """Междумордие(почти) стратегии"""
+    """Междумордие(но получилась абстракция) стратегии"""
+    extensions = ['.json', '.csv']
 
-    @staticmethod
-    def userslist() -> list:
-        filelist = []
-        extensions = ['.json', '.csv']
-        for file in os.listdir('./users/'):
-            for extension in extensions:
-                if file[-len(extension):] == extension:
-                    filelist.append(file.rstrip(extension))
-        return filelist
+    @classmethod
+    @abstractmethod
+    def userslist(cls) -> list:
+        ...
+        # !!!! ПОКА НЕ СТИРАТЬ
+
+        # filelist = []
+        # for file in os.listdir('./users/'):
+        #     for extension in cls.extensions:
+        #         if file[-len(extension):] == extension:
+        #             filelist.append(file.rstrip(extension))
+        # return filelist
+
+    @classmethod
+    def deluser(cls, name: str):
+        for extension in cls.extensions:
+            try:
+                os.remove('./users/' + name + extension)
+            except FileNotFoundError:
+                pass
 
     @staticmethod
     @abstractmethod
@@ -25,20 +37,24 @@ class Files(ABC):
 
     @staticmethod
     @abstractmethod
-    def deluser(name: str):
+    def opentasks(name: str) -> list:
         ...
 
     @staticmethod
     @abstractmethod
-    def opentasks(name:str) -> list:
+    def safetasks(name: str, data: list) -> None:
         ...
 
-    @staticmethod
-    @abstractmethod
-    def safetasks(name:str, data:list) -> None:
-        ...
 
 class JsonFile(Files):
+
+    @classmethod
+    def userslist(cls) -> list:
+        filelist = []
+        for file in os.listdir('./users/'):
+            if file[-len('.json'):] == '.json':
+                filelist.append(file.rstrip('.json'))
+        return filelist
 
     @staticmethod
     def adduser(name: str):
@@ -53,19 +69,66 @@ class JsonFile(Files):
                 json.dump([newuser], f)
 
     @staticmethod
-    def deluser(name: str):
-        os.remove('./users/' + name + '.json')
-
-    @staticmethod
-    def opentasks(name:str) -> list:
+    def opentasks(name: str) -> list:
         with open('./users/' + name + '.json', 'r') as file_json:
             data = json.load(file_json)
         return data
 
     @staticmethod
-    def safetasks(name:str,  data:list) -> None:
-        with open('./users/' + self.__user + '.json', 'w') as file_json:
-            json.dump(self.tasks2save(), file_json)
+    def safetasks(name: str, data: list) -> None:
+        with open('./users/' + name + '.json', 'w') as file_json:
+            json.dump(data, file_json)
+
+    def __repr__(self):
+        return 'JSON'
+
+
+class CsvFile(Files):
+
+    @classmethod
+    def userslist(cls) -> list:
+        filelist = []
+        for file in os.listdir('./users/'):
+            if file[-len('.csv'):] == '.csv':
+                filelist.append(file.rstrip('.csv'))
+        return filelist
+
+    @staticmethod
+    def adduser(name: str):
+        newuser = Task().__dict__
+        newuser.pop('counter')
+        try:
+            with open('./users/' + name + '.csv', 'w') as f:
+                pass
+        except FileNotFoundError:
+            os.mkdir('users')
+        with open('./users/' + name + '.csv', 'w') as f:
+            names = list(newuser.keys())
+            writer = csv.DictWriter(f, fieldnames=names)
+            writer.writeheader()
+            writer.writerow(newuser)
+
+    @staticmethod
+    def opentasks(name: str) -> list:
+        csv_list = []
+        with open('./users/' + name + '.csv', 'r') as f:
+            file_reader = csv.DictReader(f)
+            for row in file_reader:
+                csv_list.append(row)
+        return csv_list
+
+    @staticmethod
+    def safetasks(name: str, data: list) -> None:
+        with open('./users/' + name + '.csv', 'w') as f:
+            names = list(data[0].keys())
+            writer = csv.DictWriter(f, fieldnames=names)
+            writer.writeheader()
+            for line in data:
+                writer.writerow(line)
+
+    def __repr__(self):
+        return 'CSV'
+
 
 class Task:
     counter = 0
@@ -114,41 +177,44 @@ class Task:
 
 class Tasks:
 
-    def __init__(self, user=None):
+    def __init__(self, user=None, strategy: Files = JsonFile, readonly=False):
         self.task_list = []
+        self.strategy = strategy
+        self.readonly = readonly
         if user == None:
             self.__user = 'Test_user'
             self.task_list.append(Task())  # пустая задача
         else:
             self.__user = user
-            self.opentasks()
+            self.addlisttasks(strategy.opentasks(self.__user))
 
-    @staticmethod
-    def userslist() -> list:
-        files = os.listdir('./users/')
-        return [x[:-5] for x in files if x[-5:] == '.json']
+    # @staticmethod
+    # def userslist() -> list:
+    #     files = os.listdir('./users/')
+    #     return [x[:-5] for x in files if x[-5:] == '.json']
 
-    @staticmethod
-    def adduser(name: str):
-        newuser = Task().__dict__
-        newuser.pop('counter')
-        try:
-            with open('./users/' + name + '.json', 'w') as f:
-                json.dump([newuser], f)
-        except FileNotFoundError:
-            os.mkdir('users')
-            with open('./users/' + name + '.json', 'w') as f:
-                json.dump([newuser], f)
-
-    @staticmethod
-    def deluser(name: str):
-        os.remove('./users/' + name + '.json')
+    # @staticmethod
+    # def adduser(name: str):
+    #     newuser = Task().__dict__
+    #     newuser.pop('counter')
+    #     try:
+    #         with open('./users/' + name + '.json', 'w') as f:
+    #             json.dump([newuser], f)
+    #     except FileNotFoundError:
+    #         os.mkdir('users')
+    #         with open('./users/' + name + '.json', 'w') as f:
+    #             json.dump([newuser], f)
+    #
+    # @staticmethod
+    # def deluser(name: str):
+    #     os.remove('./users/' + name + '.json')
 
     # вроде не используется
-    # @property
-    # def user(self):
-    #     return self.__user
-    #
+    @property
+    def user(self):
+        return self.__user
+
+    # !!!!!!!!!!!!! пока не удалять!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # @user.setter
     # def user(self, name):
     #     os.remove('./users/' + self.__user + '.json')
@@ -158,7 +224,7 @@ class Tasks:
     def changeuser(self, name):
         self.task_list = []
         self.__user = name
-        self.opentasks()
+        self.strategy.opentasks(self.__user)
 
     def addtask(self, *args, **kwargs) -> None:
         if args == () and kwargs == {}:
@@ -213,14 +279,14 @@ class Tasks:
             tasklist.append(tmpdict)
         return tasklist
 
-    def opentasks(self) -> None:
-        self.task_list = []
-        with open('./users/' + self.__user + '.json', 'r') as file_json:
-            self.addlisttasks(json.load(file_json))
-
-    def safetasks(self) -> None:
-        with open('./users/' + self.__user + '.json', 'w') as file_json:
-            json.dump(self.tasks2save(), file_json)
+    # def opentasks(self) -> None:
+    #     self.task_list = []
+    #     with open('./users/' + self.__user + '.json', 'r') as file_json:
+    #         self.addlisttasks(json.load(file_json))
+    #
+    # def safetasks(self) -> None:
+    #     with open('./users/' + self.__user + '.json', 'w') as file_json:
+    #         json.dump(self.tasks2save(), file_json)
 
     def sorted(self, attribute: str = 'name') -> list:
         tasklist = []
