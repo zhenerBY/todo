@@ -208,12 +208,17 @@ def done_task(lst: list) -> None:
 
 @click.command()
 @click.option('-n', 'name', help="user's file name in ./users/ (without extension)")
-@click.option('-r/-w', 'r__o', default=True, help="r - for read-only mode")
-def main(name: str = None, r__o: bool = False):
-    global r_o
-    r_o = r__o
+@click.option('-type', 'strategy', help="file's format (json; csv). Default = json")
+@click.option('-r/-w', 'r__o', default=False, help="r - for read-only mode")
+def main(name: str = None, r__o: bool = False, strategy=None):
+    if strategy == None:
+        strategy = JsonFile
+    elif strategy in ('JSON', 'json'):
+        strategy = JsonFile
+    elif strategy in ('CSV', 'csv'):
+        strategy = CsvFile
     global user
-    user = Tasks(readonly=r__o)  # костыль. Т.к. user_select обращается к экземпляру Tasks
+    user = Tasks(readonly=r__o, strategy=strategy)  # костыль. Т.к. user_select обращается к экземпляру Tasks
     user = Tasks(**user_select(name), readonly=r__o)
     while True:
         show_list('LIST OF TASKS' + chr(174),
@@ -228,7 +233,7 @@ def main(name: str = None, r__o: bool = False):
         if action in 'oO':
             if not user.readonly:
                 user.strategy.safetasks(user.user, user.tasks2save())
-            user = Tasks(**user_select())
+            user = Tasks(**user_select(), readonly=r__o, strategy=strategy)
         if action in func_list.keys():
             func_list[action][0](user.showtasks(False))
         input('Press Enter to continue')
