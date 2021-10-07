@@ -73,13 +73,13 @@ def user_select(name: str = None) -> dict:
                 if strategy == 'csv':
                     user.strategy = CsvFile
             if action in 'aA':
-                if r_o:
+                if user.readonly:
                     input('!!!Operation is prohibited!!! Press Enter')
                 else:
                     name = set_and_val("Enter the name of the new user :", check=True, checkconditions=False)
                     user.strategy.adduser(name)
             if action in 'dD':
-                if r_o:
+                if user.readonly:
                     input('!!!Operation is prohibited!!! Press Enter')
                 else:
                     name = set_and_val("Enter the name NUMBER to delete :",
@@ -208,13 +208,13 @@ def done_task(lst: list) -> None:
 
 @click.command()
 @click.option('-n', 'name', help="user's file name in ./users/ (without extension)")
-@click.option('-r/-w', 'r__o', default=False, help="r - for read-only mode")
-def main(name: str = None, r__o: bool = False):
+@click.option('-r/-w', 'r__o', default=True, help="r - for read-only mode")
+def main(name: str = None, r__o: bool = True):
     global r_o
     r_o = r__o
     global user
-    user = Tasks()  # костыль. Т.к. user_select обращается к экземпляру Tasks
-    user = Tasks(**user_select(name))
+    user = Tasks(readonly=r__o)  # костыль. Т.к. user_select обращается к экземпляру Tasks
+    user = Tasks(**user_select(name), readonly=r__o)
     while True:
         show_list('LIST OF TASKS' + chr(174),
                   ' L(O)GOUT - Change user    or     E(x)it ',
@@ -222,11 +222,11 @@ def main(name: str = None, r__o: bool = False):
         action = set_and_val('Enter num of operation :',
                              [*func_list.keys(), *'xXoO'])
         if action in 'xX':
-            if not r_o:
+            if not user.readonly:
                 user.strategy.safetasks(user.user, user.tasks2save())
             exit()
         if action in 'oO':
-            if not r_o:
+            if not user.readonly:
                 user.strategy.safetasks(user.user, user.tasks2save())
             user = Tasks(**user_select())
         if action in func_list.keys():
