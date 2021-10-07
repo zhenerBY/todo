@@ -66,8 +66,8 @@ def user_select(name: str = None) -> dict:
             )
             if action in 'cC':
                 strategy = set_and_val(
-                    f'Enter files format {list(map(lambda x: x.removeprefix("."), Files.extensions))}',
-                    list(map(lambda x: x.removeprefix('.'), Files.extensions)))
+                    f'Enter files format {list(map(lambda x: x[1:], Files.extensions))}',
+                    list(map(lambda x: x[1:], Files.extensions)))
                 if strategy == 'json':
                     user.strategy = JsonFile
                 if strategy == 'csv':
@@ -209,7 +209,7 @@ def done_task(lst: list) -> None:
 @click.command()
 @click.option('-n', 'name', help="user's file name in ./users/ (without extension)")
 @click.option('-r/-w', 'r__o', default=True, help="r - for read-only mode")
-def main(name: str = None, r__o: bool = True):
+def main(name: str = None, r__o: bool = False):
     global r_o
     r_o = r__o
     global user
