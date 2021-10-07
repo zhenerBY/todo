@@ -54,7 +54,7 @@ def show_dict(dct: dict):
         print('| ', el.ljust(15), ' - ', str(dct[el]).ljust(68), ' |', sep='')
 
 
-def user_select(name: str = None) -> str:
+def user_select(name: str = None) -> dict:
     if name == None:
         while True:
             show_list('Users list',
@@ -65,9 +65,9 @@ def user_select(name: str = None) -> str:
                 [*list(map(str, range(1, len(user.strategy.userslist()) + 1))), *'aAdDxXCc'],
             )
             if action in 'cC':
-                strategy = set_and_val(f'Enter files format {list(map(lambda x: x.removeprefix("."), Files.extensions))}',
-                list(map(lambda x: x.removeprefix('.'), Files.extensions)))
-# надо добавить возврат стратегии
+                strategy = set_and_val(
+                    f'Enter files format {list(map(lambda x: x.removeprefix("."), Files.extensions))}',
+                    list(map(lambda x: x.removeprefix('.'), Files.extensions)))
                 if strategy == 'json':
                     user.strategy = JsonFile
                 if strategy == 'csv':
@@ -89,12 +89,12 @@ def user_select(name: str = None) -> str:
             if action in 'xX':
                 exit()
             if action in [*list(map(str, range(1, len(user.strategy.userslist()) + 1)))]:
-                return user.strategy.userslist()[int(action) - 1]
+                return {'user': user.strategy.userslist()[int(action) - 1], 'strategy': user.strategy}
     elif name in user.strategy.userslist():
-        return name
+        return {'user': name, 'strategy': user.strategy}
     else:
         user.strategy.adduser(name)
-        return name
+        return {'user': name, 'strategy': user.strategy}
 
 
 @table
@@ -205,9 +205,6 @@ def done_task(lst: list) -> None:
     if action in 'yY' and action != '':
         user.taskdone(*counters)
 
-def change_strategy(lst: list) -> None:
-    pass
-
 
 @click.command()
 @click.option('-n', 'name', help="user's file name in ./users/ (without extension)")
@@ -216,15 +213,14 @@ def main(name: str = None, r__o: bool = False):
     global r_o
     r_o = r__o
     global user
-    user = Tasks() #костыль. Т.к. user_select обращается к экземпляру Tasks
-    user = Tasks(user_select(name))
+    user = Tasks()  # костыль. Т.к. user_select обращается к экземпляру Tasks
+    user = Tasks(**user_select(name))
     while True:
         show_list('LIST OF TASKS' + chr(174),
                   ' L(O)GOUT - Change user    or     E(x)it ',
                   [func_list[x][1] for x in func_list.keys()])
         action = set_and_val('Enter num of operation :',
                              [*func_list.keys(), *'xXoO'])
-        # print(action)
         if action in 'xX':
             if not r_o:
                 user.strategy.safetasks(user.user, user.tasks2save())
@@ -232,7 +228,7 @@ def main(name: str = None, r__o: bool = False):
         if action in 'oO':
             if not r_o:
                 user.strategy.safetasks(user.user, user.tasks2save())
-            user = Tasks(user_select())
+            user = Tasks(**user_select())
         if action in func_list.keys():
             func_list[action][0](user.showtasks(False))
         input('Press Enter to continue')
@@ -246,7 +242,6 @@ func_list = {'1': (show_tasks, 'Show tasks list'),
              '6': (search_task, 'Search for a task'),
              '7': (sort_task, 'Display sorted list'),
              '8': (done_task, 'Mark task as completed'),
-             '9': (change_strategy, 'Change file format'),
              }
 
 main()

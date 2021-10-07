@@ -188,28 +188,8 @@ class Tasks:
             self.__user = user
             self.addlisttasks(strategy.opentasks(self.__user))
 
-    # @staticmethod
-    # def userslist() -> list:
-    #     files = os.listdir('./users/')
-    #     return [x[:-5] for x in files if x[-5:] == '.json']
-
-    # @staticmethod
-    # def adduser(name: str):
-    #     newuser = Task().__dict__
-    #     newuser.pop('counter')
-    #     try:
-    #         with open('./users/' + name + '.json', 'w') as f:
-    #             json.dump([newuser], f)
-    #     except FileNotFoundError:
-    #         os.mkdir('users')
-    #         with open('./users/' + name + '.json', 'w') as f:
-    #             json.dump([newuser], f)
-    #
-    # @staticmethod
-    # def deluser(name: str):
-    #     os.remove('./users/' + name + '.json')
-
     # вроде не используется
+    # !!! уже используется!!!
     @property
     def user(self):
         return self.__user
@@ -278,15 +258,6 @@ class Tasks:
                 tmpdict[task_2] = task.__dict__[task_2]
             tasklist.append(tmpdict)
         return tasklist
-
-    # def opentasks(self) -> None:
-    #     self.task_list = []
-    #     with open('./users/' + self.__user + '.json', 'r') as file_json:
-    #         self.addlisttasks(json.load(file_json))
-    #
-    # def safetasks(self) -> None:
-    #     with open('./users/' + self.__user + '.json', 'w') as file_json:
-    #         json.dump(self.tasks2save(), file_json)
 
     def sorted(self, attribute: str = 'name') -> list:
         tasklist = []
